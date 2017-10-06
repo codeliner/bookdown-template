@@ -2,7 +2,8 @@
   "title": "Tutorial",
   "content": [
     {"introduction": "introduction.md"},
-    {"why_event_sourcing": "why_event_sourcing.md"}
+    {"why_event_sourcing": "why_event_sourcing.md"},
+    {"event_sourcing_basics": "event_sourcing_basics.md"}
   ],
   "tocDepth": 1
 }
