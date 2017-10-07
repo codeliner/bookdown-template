@@ -13,6 +13,7 @@
             float: left;
             margin-left: 8px;
             margin-right: 8px;
+            margin-top: -2px;
             transition-timing-function: ease-in-out;
             transition: all 5s;
             height: 50px;

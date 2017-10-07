@@ -51,9 +51,11 @@ We need a project structure for our shopping basket implementation.
 | | | |_ Command
 | | | |_ Event
 | | | |_ Basket
+| | | |_ ERP
 | | |_ Projection
 | |   |_ Query
 | |_ tests
+|    |_Model
 |_ scripts
 ```
 
@@ -64,8 +66,9 @@ $ mkdir -p ./Basket/src/Infrastruture/Prooph \
     ./Basket/src/Model/Command/ \
    ./Basket/src/Model/Event/ \
    ./Basket/src/Model/Basket/ \
+   ./Basket/src/Model/ERP/ \
    ./Basket/src/Projection/Query \
-   ./Basket/tests \
+   ./Basket/tests/Model \
    ./scripts
 ```
 
@@ -197,7 +200,7 @@ Let's add the `Basket` aggregate now.
 
 declare(strict_types=1);
 
-namespace App\BasketTest\Model;
+namespace App\Basket\Model;
 
 use Prooph\EventSourcing\AggregateChanged;
 use Prooph\EventSourcing\AggregateRoot;
@@ -234,11 +237,11 @@ the class constructor as public method. Instead we're asked to use a so called *
 
 declare(strict_types=1);
 
-namespace App\BasketTest\Model;
+namespace App\Basket\Model;
 
 use App\Basket\Model\Event\ShoppingSessionStarted;
-use App\BasketTest\Model\Basket\BasketId;
-use App\BasketTest\Model\Basket\ShoppingSession;
+use App\Basket\Model\Basket\BasketId;
+use App\Basket\Model\Basket\ShoppingSession;
 use Prooph\EventSourcing\AggregateChanged;
 use Prooph\EventSourcing\AggregateRoot;
 
@@ -278,9 +281,16 @@ final class Basket extends AggregateRoot
 }
 
 ```
-A meaningful named constructor using the Ubiquitous Language is great way to let the code document itself. 
+A meaningful named constructor using the Ubiquitous Language is a great way to let the code document itself. 
 The `Basket` aggregate requires a `ShoppingSession` and a `BasketId` to start the shopping session. 
 Both are value objects that we're going to add next.
+
+*Note: BasketId becomes the identifier of the aggregate but it is created outside of the aggregate. That's a common pattern in
+a CQRS system. For example the frontend can create a BasketId using a JavaScript UUID library and send the BasketId to
+the backend. Remember from the introduction chapter: Handling a command has no response other than success or failure. In case
+of success the frontend can use the BasketId to fetch state of the Basket from a read model. Later in the tutorial we'll
+see that in action. For now just keep in mind that aggregate ids are created by the client or application layer
+if a CQRS architecture is used.*
 
 *File: ./Basket/src/Model/Basket/ShoppingSession.php*
 ```php
@@ -288,7 +298,7 @@ Both are value objects that we're going to add next.
 
 declare(strict_types=1);
 
-namespace App\BasketTest\Model\Basket;
+namespace App\Basket\Model\Basket;
 
 final class ShoppingSession
 {
@@ -335,7 +345,7 @@ final class ShoppingSession
 <?php
 declare(strict_types=1);
 
-namespace App\BasketTest\Model\Basket;
+namespace App\Basket\Model\Basket;
 
 use Ramsey\Uuid\Uuid;
 
@@ -351,7 +361,7 @@ final class BasketId
     private function __construct(string $basketId)
     {
         if(!Uuid::isValid($basketId)) {
-            throw new \InvalidArgumentException("Given basket id is not a valid UUID");
+            throw new \InvalidArgumentException("Given basket id is not a valid UUID. Got " . $basketId);
         }
 
         $this->basketId = $basketId;
@@ -394,11 +404,11 @@ be applied. Hence, we need to take over that task.
 
 declare(strict_types=1);
 
-namespace App\BasketTest\Model;
+namespace App\Basket\Model;
 
 use App\Basket\Model\Event\ShoppingSessionStarted;
-use App\BasketTest\Model\Basket\BasketId;
-use App\BasketTest\Model\Basket\ShoppingSession;
+use App\Basket\Model\Basket\BasketId;
+use App\Basket\Model\Basket\ShoppingSession;
 use Prooph\EventSourcing\AggregateChanged;
 use Prooph\EventSourcing\AggregateRoot;
 
@@ -439,9 +449,11 @@ final class Basket extends AggregateRoot
         //To delegate work to them and keep the apply method lean 
         switch ($event->messageName()) {
             case ShoppingSessionStarted::class:
+                /** @var $event ShoppingSessionStarted */
+                
                 //We get primitive values from events and translate them back to domain objects
-                $this->basketId = BasketId::fromString($event->aggregateId());
-                $this->shoppingSession = ShoppingSession::fromString($event->payload()['shopping_session']);
+                $this->basketId = BasketId::fromString($event->basketId());
+                $this->shoppingSession = ShoppingSession::fromString($event->shoppingSession());
                 break;
         }
     }
@@ -458,7 +470,7 @@ defined by prooph's `AggregateRoot` class.
 
 declare(strict_types=1);
 
-namespace App\BasketTest\Model;
+namespace App\Basket\Model;
 
 //...
 
