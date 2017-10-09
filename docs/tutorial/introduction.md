@@ -14,7 +14,9 @@ of CQRS and Event Sourcing and why messages play an important role in this archi
 
 ## The initial setup
 
-To start with the tutorial you need PHP 7.1 and composer installed.
+To start with the tutorial you need PHP 7.1 and composer installed. If you're on Windows please consider using a Linux VM
+for the tutorial. The tutorial is tested on Linux only and the commands needed for project set up (not many) are shown in
+their Linux version only. 
 
 
 ## prooph messages
@@ -485,3 +487,9 @@ Welcome to the world of Event Sourcing. This is only the beginning. When you are
 you don't want to look back. Event Sourcing makes it so much simpler to create software that reflects intent and you have
 all information available to find bugs faster and add new features without pain. Messages are the basic building block but
 we need to look at a few other things. Fasten your seatbelt and enjoy the journey.
+
+## Quick Version
+
+The next pages cover all the things you need to know about Event Sourcing. This includes working on an example project along
+with detailed explanations. If you want to do a quick walk-through instead or get your hands dirty before the theory
+then you can head over to [Prooph: CQRS+ES in PHP. How to use. - by Marcin Pilśniak](https://pilsniak.com/cqrs-es-php-prooph/).

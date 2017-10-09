@@ -1,3 +1,4 @@
 /vendor
 /docs/html
 .idea
+/prooph_tutorial/*
