@@ -43,15 +43,16 @@ We need a project structure for our shopping basket implementation.
 
 ```
 |_ Basket
-| |_ scripts
+| |_ scripts           
 | |_ src
 | | |_ Infrastructure
 | | | |_ Prooph
 | | |_ Model
+| | | |_ Basket
 | | | |_ Command
 | | | |_ Event
-| | | |_ Basket
 | | | |_ ERP
+| | | |_ Exception
 | | |_ Projection
 | |   |_ Query
 | |_ tests
@@ -67,6 +68,7 @@ $ mkdir -p ./Basket/src/Infrastruture/Prooph \
    ./Basket/src/Model/Event/ \
    ./Basket/src/Model/Basket/ \
    ./Basket/src/Model/ERP/ \
+   ./Basket/src/Model/Exception/ \
    ./Basket/src/Projection/Query \
    ./Basket/tests/Model \
    ./scripts

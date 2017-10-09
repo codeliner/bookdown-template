@@ -145,6 +145,8 @@ the domain model. Just put a `phpunit.xml.dist` file in the project root with fo
 Now we can run the tests with `php vendor/bin/phpunit`
 
 ```bash
+$ php vendor/bin/phpunit
+
 PHPUnit 6.3.1 by Sebastian Bergmann and contributors.
 
 .                                                                   1 / 1 (100%)
@@ -249,6 +251,7 @@ And finally we add a new method to the `Basket` aggregate that we're going to te
 
 //...
 use App\Basket\Model\ERP\ProductId;
+use App\Basket\Model\Exception\ProductAddedTwice;
 
 final class Basket extends AggregateRoot
 {
@@ -267,7 +270,7 @@ final class Basket extends AggregateRoot
     public function addProduct(ProductId $productId): void
     {
         if(array_key_exists($productId->toString(), $this->products)) {
-            throw new \RuntimeException("Product was already added. Got " . $productId->toString());
+            throw ProductAddedTwice::toBasket($this->basketId, $productId);
         }
                 
         //@TODO: Check stock
@@ -302,10 +305,33 @@ is also used as index. This way we can easily check if a product is added twice.
 The new `addProduct()` method takes a `ProductId` as argument and records a new domain event `ProductAddedToBasket`
 which then gets applied using a new `case` in the `apply` method.
 
-*Note: For the sake of simplicity we throw a PHP exception if a product was already added. A better approach would be to
-use a dedicated exception class. This makes it easier to catch specific exceptions in the application layer and react on them.
-For example if the same product is already in the basket you could simply catch the exception and ignore it because the user just 
-hit the button in the frontend twice.*
+In case of a product being added twice the method throws a `ProductAddedTwice` exception. Here is the implementation of
+that exception.
+
+*File: ./Basket/src/Model/Exception/ProductAddedTwice.php*
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Basket\Model\Exception;
+
+use App\Basket\Model\Basket\BasketId;
+use App\Basket\Model\ERP\ProductId;
+
+final class ProductAddedTwice extends \RuntimeException
+{
+    public static function toBasket(BasketId $basketId, ProductId $productId): self
+    {
+        return new self(sprintf(
+            'Product %s added twice to basket %s',
+            $productId->toString(),
+            $basketId->toString()
+        ));
+    }
+}
+
+```
 
 Back to the test case. We want to see if our implementation works as expected.
 
@@ -395,7 +421,7 @@ class BasketTest extends TestCase
 
     /**
      * @test
-     * @expectedException \RuntimeException
+     * @expectedException \App\Basket\Model\Exception\ProductAddedTwice
      */
     public function it_throws_exception_if_product_is_added_twice()
     {
@@ -461,6 +487,8 @@ class BasketTest extends TestCase
 Looks good.
 
 ```bash
+$ php vendor/bin/phpunit
+
 PHPUnit 6.3.1 by Sebastian Bergmann and contributors.
 
 ...                                                                 3 / 3 (100%)
@@ -475,7 +503,7 @@ few basket specific test helpers to get better type hinting support and keep cre
 for easier refactoring.
 
 Second, we learned how to test exceptions. Using exceptions to communicate errors is not always the best choice.
-Another possibility is to use domain events instead. Later in the tutorial we will see this in action 
+Another possibility is to use domain events for failure scenarios, too. Later in the tutorial we will see this in action 
 and discuss the pros and cons of such an approach.
 
 Anyway, testing failure cases where the aggregate records a failed event is not different from testing normal event recording.
