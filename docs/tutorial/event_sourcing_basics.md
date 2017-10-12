@@ -110,20 +110,25 @@ declare(strict_types=1);
 
 namespace App\Basket\Model\Event;
 
+use App\Basket\Model\Basket\BasketId;
+use App\Basket\Model\Basket\ShoppingSession;
 use Prooph\EventSourcing\AggregateChanged;
 
 final class ShoppingSessionStarted extends AggregateChanged
 {
-    public function basketId(): string
+    public function basketId(): BasketId
     {
-        return $this->aggregateId();
+        //Note: Internally, we work with scalar types, but the getter returns the value object
+        return BasketId::fromString($this->aggregateId());
     }
-    
-    public function shoppingSession(): string
+
+    public function shoppingSession(): ShoppingSession
     {
-        return $this->payload['shopping_session'];
+        //Same here, return domain specific value object
+        return ShoppingSession::fromString($this->payload['shopping_session']);
     }
 }
+
 ```
 What we do here is extending the base event class `AggregateChanged` from the `prooph/event-sourcing` package.
 More about aggregates in a minute. First let's have a look at what the base event class has to offer:
@@ -190,7 +195,7 @@ Whereby, each next step is validated by the aggregate upfront using current stat
 *A checkout can only be made if no unresolved quantity-stock-conflicts exist for the basket.*
 
 Effective Aggregate Design¹¹ is possibly the hardest part of a well crafted domain model. And it evolves over time so
-be prepared to constantly refactor previous design decisions¹². Thinking of aggregates as processes and model them in an event
+be prepared to constantly refactor previous design decisions. Thinking of aggregates as processes and model them in an event
 sourced fashion can help a lot, but it remains a task that needs practice. So don't worry if your first attempts end up
 being unpractical. You will get better. **Thinking in events and processes is the key.**
 
@@ -453,9 +458,8 @@ final class Basket extends AggregateRoot
             case ShoppingSessionStarted::class:
                 /** @var $event ShoppingSessionStarted */
                 
-                //We get primitive values from events and translate them back to domain objects
-                $this->basketId = BasketId::fromString($event->basketId());
-                $this->shoppingSession = ShoppingSession::fromString($event->shoppingSession());
+                $this->basketId = $event->basketId();
+                $this->shoppingSession = $event->shoppingSession();
                 break;
         }
     }
@@ -524,4 +528,3 @@ head with too much information at a time.*
 - [What is EventStorming - Alberto Brandolini](http://ziobrando.blogspot.de/2013/11/introducing-event-storming.html)²
 - [Ubiquitous Language - Martin Fowler](https://martinfowler.com/bliki/UbiquitousLanguage.html)³
 - [Effective Aggregate Design - Vaughn Vernon](https://vaughnvernon.co/?p=838)¹¹
-- [Why We Avoid Putting Value Objects in Events - Nick Chamberlain](https://buildplease.com/pages/vos-in-events/)¹²

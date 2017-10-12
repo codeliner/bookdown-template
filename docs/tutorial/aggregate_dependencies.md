@@ -258,7 +258,7 @@ final class Basket extends AggregateRoot
                 /** @var $event ProductAddedToBasket */
 
                 //Use ProductId as index to avoid adding a product twice
-                $this->products[$event->productId()] = [
+                $this->products[$event->productId()->toString()] = [
                     'stock_quantity' => $event->stockQuantity(),
                     'stock_version' => $event->stockVersion(),
                     'quantity' => $event->quantity()
@@ -312,18 +312,20 @@ declare(strict_types=1);
 
 namespace App\Basket\Model\Event;
 
+use App\Basket\Model\Basket\BasketId;
+use App\Basket\Model\ERP\ProductId;
 use Prooph\EventSourcing\AggregateChanged;
 
 final class ProductAddedToBasket extends AggregateChanged
 {
-    public function basketId(): string
+    public function basketId(): BasketId
     {
-        return $this->aggregateId();
+        return BasketId::fromString($this->aggregateId());
     }
 
-    public function productId(): string
+    public function productId(): ProductId
     {
-        return $this->payload()['product_id'];
+        return ProductId::fromString($this->payload()['product_id']);
     }
 
     public function stockQuantity(): ?int
@@ -409,11 +411,12 @@ class BasketTest extends TestCase
 
         $this->assertCount(1, $events);
 
+        /** @var ShoppingSessionStarted $event */
         $event = $events[0];
 
         $this->assertSame(ShoppingSessionStarted::class, $event->messageName());
-        $this->assertSame($this->basketId->toString(), $event->aggregateId());
-        $this->assertSame($this->shoppingSession->toString(), $event->payload()['shopping_session']);
+        $this->assertTrue($this->basketId->equals($event->basketId()));
+        $this->assertTrue($this->shoppingSession->equals($event->shoppingSession()));
     }
 
     /**
@@ -432,11 +435,12 @@ class BasketTest extends TestCase
 
         $this->assertCount(1, $events);
 
+        /** @var ProductAddedToBasket $event */
         $event = $events[0];
 
         $this->assertSame(ProductAddedToBasket::class, $event->messageName());
-        $this->assertSame($this->basketId->toString(), $event->aggregateId());
-        $this->assertSame($this->product1->toString(), $event->payload()['product_id']);
+        $this->assertTrue($this->basketId->equals($event->basketId()));
+        $this->assertTrue($this->product1->equals($event->productId()));
         $this->assertSame(5, $event->payload()['stock_quantity']);
         $this->assertSame(1, $event->payload()['stock_version']);
         $this->assertSame(1, $event->payload()['quantity']);
@@ -496,11 +500,12 @@ class BasketTest extends TestCase
 
         $this->assertCount(1, $events);
 
+        /** @var ProductAddedToBasket $event */
         $event = $events[0];
 
         $this->assertSame(ProductAddedToBasket::class, $event->messageName());
-        $this->assertSame($this->basketId->toString(), $event->aggregateId());
-        $this->assertSame($this->product1->toString(), $event->payload()['product_id']);
+        $this->assertTrue($this->basketId->equals($event->basketId()));
+        $this->assertTrue($this->product1->equals($event->productId()));
         $this->assertSame(1, $event->payload()['quantity']);
         //No stock info present
         $this->assertSame(null, $event->payload()['stock_quantity']);
